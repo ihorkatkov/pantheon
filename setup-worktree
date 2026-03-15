@@ -1,0 +1,66 @@
+#!/bin/bash
+# setup-worktree - Create a new git worktree
+#
+# Usage:
+#   ./setup-worktree <worktree-name> [branch-name]
+#   # Or via pt:
+#   pt --new <worktree-name> [branch-name]
+
+PANTHEON_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKTREES_DIR="$PANTHEON_ROOT/worktrees"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+if [ -z "$1" ]; then
+  echo -e "${RED}Error: worktree name required${NC}"
+  echo "Usage: ./setup-worktree <worktree-name> [branch-name]"
+  exit 1
+fi
+
+WORKTREE_NAME="$1"
+WORKTREE_PATH="$WORKTREES_DIR/$WORKTREE_NAME"
+
+# Branch name defaults to worktree name
+BRANCH_NAME="${2:-$WORKTREE_NAME}"
+
+# Check if main worktree exists
+if [ ! -d "$WORKTREES_DIR/main" ]; then
+  echo -e "${RED}Error: worktrees/main/ does not exist${NC}"
+  echo "Run 'make init' first to clone your product repo"
+  exit 1
+fi
+
+# Check if worktree already exists
+if [ -d "$WORKTREE_PATH" ]; then
+  echo -e "${YELLOW}Worktree '$WORKTREE_NAME' already exists${NC}"
+  exit 1
+fi
+
+# Create the git worktree
+echo -e "${BLUE}==>${NC} ${GREEN}Creating worktree: $WORKTREE_NAME${NC}"
+cd "$WORKTREES_DIR/main"
+
+if git worktree add "$WORKTREE_PATH" -b "$BRANCH_NAME" 2>/dev/null; then
+  echo -e "${GREEN}✓${NC} Worktree created at $WORKTREE_PATH"
+elif git worktree add "$WORKTREE_PATH" "$BRANCH_NAME" 2>/dev/null; then
+  echo -e "${GREEN}✓${NC} Worktree created at $WORKTREE_PATH (existing branch)"
+else
+  echo -e "${RED}Failed to create worktree${NC}"
+  echo "Check if branch '$BRANCH_NAME' already exists in another worktree"
+  exit 1
+fi
+
+# Run post-create hook if it exists
+HOOK="$PANTHEON_ROOT/hooks/post-worktree-create"
+if [ -x "$HOOK" ]; then
+  echo -e "${BLUE}==>${NC} ${GREEN}Running post-worktree-create hook${NC}"
+  "$HOOK" "$WORKTREE_PATH"
+fi
+
+echo ""
+echo -e "${GREEN}Done!${NC} Open with: pt $WORKTREE_NAME"

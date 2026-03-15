@@ -1,0 +1,25 @@
+#!/bin/bash
+# post-worktree-create hook — runs after a new worktree is created
+# Copy this file to: hooks/post-worktree-create (remove .example)
+# Make it executable: chmod +x hooks/post-worktree-create
+#
+# Available variables:
+#   $1 — Path to the new worktree
+#
+# Example customizations:
+#   - Copy .env files
+#   - Install dependencies
+#   - Run code generation
+#   - Create symlinks
+
+WORKTREE_PATH="$1"
+
+echo "Post-worktree hook: customize me!"
+
+# Example: Copy .env from main
+# if [ -f "worktrees/main/.env" ]; then
+#   cp "worktrees/main/.env" "$WORKTREE_PATH/.env"
+# fi
+
+# Example: Install dependencies
+# cd "$WORKTREE_PATH" && npm install

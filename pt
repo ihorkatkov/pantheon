@@ -1,0 +1,243 @@
+#!/bin/bash
+# pt - OpenCode wrapper for pantheon worktree management
+#
+# Usage:
+#   pt                      # Open opencode in main/ (default)
+#   pt <worktree>           # Open opencode in specified worktree
+#   pt -p "message"         # Run prompt in main/
+#   pt <worktree> -p "msg"  # Run prompt in specified worktree
+#   pt --list               # List available worktrees
+#   pt --new <name>         # Create new worktree and open opencode
+
+set -e
+
+PANTHEON_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKTREES_DIR="$PANTHEON_ROOT/worktrees"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
+
+# Variables
+WORKTREE="main"
+PROMPT=""
+EXTRA_ARGS=()
+
+list_worktrees() {
+  echo -e "${BLUE}Available worktrees:${NC}"
+  while IFS= read -r dir; do
+    name="${dir#$WORKTREES_DIR/}"
+    branch=$(git -C "$dir" branch --show-current 2>/dev/null || echo "detached")
+    if [ "$name" = "main" ]; then
+      echo -e "  ${GREEN}$name${NC} ($branch) [default]"
+    else
+      echo -e "  $name ($branch)"
+    fi
+  done < <(find "$WORKTREES_DIR" -mindepth 1 -maxdepth 3 -name ".git" 2>/dev/null | sed 's|/.git$||' | sort)
+}
+
+create_worktree() {
+  local name="$1"
+  local branch="$2"
+
+  if [ -z "$name" ]; then
+    echo -e "${RED}Error: worktree name required${NC}"
+    echo "Usage: pt --new <worktree-name> [branch-name]"
+    exit 1
+  fi
+
+  echo -e "${BLUE}Creating worktree:${NC} $name"
+  cd "$WORKTREES_DIR/main"
+  "$PANTHEON_ROOT/setup-worktree" "$name" "${branch:-$name}"
+}
+
+remove_worktree() {
+  local name="$1"
+  local force="$2"
+
+  if [ -z "$name" ]; then
+    echo -e "${RED}Error: worktree name required${NC}"
+    echo "Usage: pt --remove <worktree-name> [--force]"
+    exit 1
+  fi
+
+  if [ "$name" = "main" ]; then
+    echo -e "${RED}Error: Cannot remove main worktree${NC}"
+    exit 1
+  fi
+
+  local worktree_path="$WORKTREES_DIR/$name"
+
+  if [ ! -d "$worktree_path" ]; then
+    echo -e "${RED}Error: Worktree '$name' not found${NC}"
+    list_worktrees
+    exit 1
+  fi
+
+  # Get branch info before removal
+  local branch=$(git -C "$worktree_path" branch --show-current 2>/dev/null || echo "detached")
+
+  # Confirm unless force flag
+  if [ "$force" != "--force" ] && [ "$force" != "-f" ]; then
+    echo -e "${YELLOW}Remove worktree '$name' ($branch)?${NC}"
+    echo -e "Path: $worktree_path"
+    read -p "Type 'yes' to confirm: " confirm
+    if [ "$confirm" != "yes" ]; then
+      echo -e "${BLUE}Cancelled${NC}"
+      exit 0
+    fi
+  fi
+
+  echo -e "${BLUE}Removing worktree:${NC} $name"
+  cd "$WORKTREES_DIR/main"
+
+  if git worktree remove "$worktree_path" 2>/dev/null; then
+    echo -e "${GREEN}Worktree '$name' removed${NC}"
+  else
+    echo -e "${YELLOW}Worktree has changes. Use --force to remove anyway${NC}"
+    if [ "$force" = "--force" ] || [ "$force" = "-f" ]; then
+      git worktree remove --force "$worktree_path"
+      echo -e "${GREEN}Worktree '$name' force removed${NC}"
+    else
+      exit 1
+    fi
+  fi
+}
+
+prune_worktrees() {
+  echo -e "${BLUE}Pruning stale worktree references...${NC}"
+  cd "$WORKTREES_DIR/main"
+
+  # Show what will be pruned
+  local stale=$(git worktree list --porcelain | grep -B2 "prunable" | grep "worktree" | cut -d' ' -f2 || true)
+
+  if [ -z "$stale" ]; then
+    echo -e "${GREEN}No stale worktrees to prune${NC}"
+  else
+    echo -e "${YELLOW}Stale worktrees:${NC}"
+    echo "$stale"
+    git worktree prune -v
+    echo -e "${GREEN}Pruned stale worktree references${NC}"
+  fi
+
+  # Also show current worktrees
+  echo ""
+  list_worktrees
+}
+
+show_help() {
+  echo -e "${BLUE}pt${NC} - OpenCode wrapper for pantheon worktree management"
+  echo ""
+  echo -e "${BLUE}Usage:${NC}"
+  echo "  pt                        Open opencode in main/ (default)"
+  echo "  pt <worktree>             Open opencode in specified worktree"
+  echo "  pt -p \"message\"           Run prompt in main/"
+  echo "  pt <worktree> -p \"msg\"    Run prompt in specified worktree"
+  echo "  pt --list                 List available worktrees"
+  echo "  pt --new <name> [branch]  Create new worktree"
+  echo "  pt --remove <name>        Remove a worktree"
+  echo "  pt --prune                Prune stale worktree references"
+  echo ""
+  echo -e "${BLUE}Options:${NC}"
+  echo "  -p, --prompt <message>    Run opencode with a prompt (non-interactive)"
+  echo "  -l, --list                List available worktrees"
+  echo "  -n, --new <name>          Create new worktree"
+  echo "  -r, --remove <name>       Remove a worktree (asks for confirmation)"
+  echo "      --prune               Prune stale worktree references"
+  echo "  -h, --help                Show this help"
+  echo ""
+  echo -e "${BLUE}Examples:${NC}"
+  echo "  pt                                    # Interactive on main"
+  echo "  pt my-feature                         # Interactive on my-feature"
+  echo "  pt -p \"list all files\"                # Run prompt on main"
+  echo "  pt main -p \"explain this codebase\"    # Run prompt on main"
+  echo "  pt --new my-feature my/branch-name    # Create worktree"
+  echo "  pt --remove my-feature                # Remove worktree (confirms)"
+  echo "  pt --remove my-feature --force        # Remove without confirmation"
+  echo "  pt --prune                            # Clean up stale references"
+  echo ""
+  echo -e "${BLUE}Environment:${NC}"
+  echo "  OPENCODE_CONFIG_DIR is set to $PANTHEON_ROOT/.opencode"
+  echo "  This loads shared agents and commands"
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --list|-l)
+      list_worktrees
+      exit 0
+      ;;
+    --new|-n)
+      create_worktree "$2" "$3"
+      WORKTREE="$2"
+      shift 3 2>/dev/null || shift $#
+      ;;
+    --remove|-r)
+      remove_worktree "$2" "$3"
+      exit 0
+      ;;
+    --prune)
+      prune_worktrees
+      exit 0
+      ;;
+    --help|-h)
+      show_help
+      exit 0
+      ;;
+    --prompt|-p)
+      if [ -z "$2" ]; then
+        echo -e "${RED}Error: --prompt requires a message${NC}"
+        exit 1
+      fi
+      PROMPT="$2"
+      shift 2
+      ;;
+    -*)
+      # Unknown flag - pass to opencode
+      EXTRA_ARGS+=("$1")
+      shift
+      ;;
+    *)
+      # First positional arg is worktree, rest go to opencode
+      if [ "$WORKTREE" = "main" ] && [ -d "$WORKTREES_DIR/$1" ]; then
+        WORKTREE="$1"
+      else
+        EXTRA_ARGS+=("$1")
+      fi
+      shift
+      ;;
+  esac
+done
+
+WORKTREE_PATH="$WORKTREES_DIR/$WORKTREE"
+
+if [ ! -d "$WORKTREE_PATH" ]; then
+  echo -e "${RED}Error: Worktree '$WORKTREE' not found${NC}"
+  echo ""
+  list_worktrees
+  exit 1
+fi
+
+# Check if it's a valid git worktree
+if [ ! -d "$WORKTREE_PATH/.git" ] && [ ! -f "$WORKTREE_PATH/.git" ]; then
+  echo -e "${RED}Error: '$WORKTREE' is not a git worktree${NC}"
+  exit 1
+fi
+
+# Export config directory for shared agents/commands
+export OPENCODE_CONFIG_DIR="$PANTHEON_ROOT/.opencode"
+
+# Show which worktree we're opening
+branch=$(git -C "$WORKTREE_PATH" branch --show-current 2>/dev/null || echo "detached")
+
+if [ -n "$PROMPT" ]; then
+  echo -e "${BLUE}Running prompt in${NC} ${GREEN}$WORKTREE${NC} ${YELLOW}($branch)${NC}"
+  cd "$WORKTREE_PATH" && exec opencode run "${EXTRA_ARGS[@]}" "$PROMPT"
+else
+  echo -e "${BLUE}Opening opencode in${NC} ${GREEN}$WORKTREE${NC} ${YELLOW}($branch)${NC}"
+  cd "$WORKTREE_PATH" && exec opencode "${EXTRA_ARGS[@]}"
+fi
