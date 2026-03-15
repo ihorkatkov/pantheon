@@ -4,40 +4,65 @@ description: Inspect your product repository and generate a project-specific AGE
 
 # /setup-repo
 
-You are setting up a Pantheon workspace for a new project. Your job is to inspect the product repository in the current worktree and generate a comprehensive AGENTS.md that gives all AI agents the context they need.
+**Your ONLY job is to WRITE the file `AGENTS.md` at the Pantheon workspace root.**
 
-## What You Do
+You must:
+1. READ the product repository in the current worktree to understand its stack
+2. WRITE one file: the AGENTS.md at the workspace root (the `PANTHEON_ROOT` environment variable points there, or navigate two directories up from the worktree: `../../AGENTS.md`)
 
-1. **Discover the ecosystem** — identify languages, frameworks, build tools, test runners
-2. **Map the structure** — directories, entry points, key files
-3. **Extract conventions** — code style, naming, imports, error handling patterns
-4. **Generate AGENTS.md** — write a complete project context file
+## Hard Rules
 
-## Inspection Strategy
+- **Do NOT** run any install, build, or test commands (`npm install`, `mix deps.get`, `pip install`, `cargo build`, etc.)
+- **Do NOT** modify any files in the product repository
+- **Do NOT** create or modify any files other than AGENTS.md
+- **Do NOT** run the project's dev server, database migrations, or asset builds
+- You are a READER and a WRITER of one file. Nothing else.
 
-### Step 1: Identify the Stack
-Read configuration files to determine the tech stack:
-- `package.json`, `deno.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, `setup.py`, `requirements.txt`, `Gemfile`, `pom.xml`, `build.gradle`, etc.
-- TypeScript configuration: `tsconfig.json`, `tsconfig.*.json`
-- Framework indicators (Next.js, Rails, Django, FastAPI, Spring, etc.)
-- Test runner and test patterns
-- CI/CD configuration (.github/workflows/, .gitlab-ci.yml, .circleci/, etc.)
+## Step 1: Identify the Stack
 
-### Step 2: Map the Structure
-- List top-level directories and their purposes
-- Identify entry points (main files, route files, server files)
-- Find configuration files
-- Locate test directories and test file patterns
+Read configuration files (do NOT execute anything):
 
-### Step 3: Extract Conventions
-- Read existing README.md, CONTRIBUTING.md, or style guides
-- Analyze 3-5 source files for patterns (imports, naming, structure)
-- Check linter/formatter configs (`.eslintrc`, `.eslintrc.json`, `.prettierrc`, `tsconfig.json`, `rustfmt.toml`, `pyproject.toml` tool sections, etc.)
-- Look at existing tests for testing patterns and frameworks
-- Check git history for commit message conventions
+- `package.json`, `deno.json`, `tsconfig.json` → Node.js / Deno / TypeScript
+- `Cargo.toml` → Rust
+- `go.mod` → Go
+- `pyproject.toml`, `setup.py`, `requirements.txt` → Python
+- `mix.exs` → Elixir
+- `Gemfile` → Ruby
+- `pom.xml`, `build.gradle` → Java
+- `Makefile`, `Justfile` → Build system
+- `.github/workflows/`, `.gitlab-ci.yml`, `.circleci/` → CI/CD
 
-### Step 4: Write AGENTS.md
-Write the file at the WORKSPACE ROOT (two levels up from the worktree, or check where the current AGENTS.md placeholder is). Use this structure:
+From these files, extract:
+- Language(s) and framework(s)
+- Test commands and test runner
+- Lint and format commands
+- Build / validation commands
+- Package manager
+
+## Step 2: Map the Structure
+
+Read directory listing and key files:
+- Top-level directories and their purposes
+- Entry points (main files, route files, server files)
+- Test directories and test file naming patterns
+- Configuration files
+
+## Step 3: Extract Conventions
+
+Read (not execute) a few source files:
+- 3-5 source files for import patterns, naming, structure
+- 3-5 test files for test framework usage and patterns
+- Linter/formatter configs (`.eslintrc`, `.prettierrc`, `rustfmt.toml`, `.formatter.exs`, etc.)
+- README.md, CONTRIBUTING.md for existing conventions
+- Recent git log for commit message patterns: `git log --oneline -20`
+
+## Step 4: WRITE AGENTS.md (THIS IS YOUR PRIMARY DELIVERABLE)
+
+Write the file to the workspace root. Use the `PANTHEON_ROOT` environment variable if available:
+- If `$PANTHEON_ROOT` is set: write to `$PANTHEON_ROOT/AGENTS.md`
+- Otherwise: write to `../../AGENTS.md` (relative to worktree in `worktrees/main/`)
+
+You MUST include ALL of the following sections. Do not skip any.
 
 ```
 # AGENTS.md
@@ -46,82 +71,110 @@ Instructions for AI agents working in this repository.
 
 ## Agent Pantheon
 
-[Copy the agent tables from the existing placeholder AGENTS.md — keep them as-is]
+This workspace uses a multi-agent system coordinated by **Zeus** (the master orchestrator):
+
+### Primary Agents
+
+| Agent | Role | When Used |
+|-------|------|-----------|
+| **Zeus** | Master Orchestrator | Default agent. Routes work to specialists |
+| **Prometheus** | Strategic Planner | Complex planning, requirements gathering |
+| **Vulkanus** | TDD Implementer | Code changes, bug fixes, validation |
+| **Mnemosyne** | System Cartographer | Research, documentation |
+| **Oracle** | Architecture Advisor | Hard debugging, design decisions |
+| **Argus** | Adversarial Reviewer | Pre-landing quality gate |
+
+### Utility Agents
+
+| Agent | Role |
+|-------|------|
+| **Explore** | Contextual grep — "Where is X?" |
+| **Codebase Locator** | Find files and directories |
+| **Codebase Analyzer** | Understand how code works |
+| **Codebase Pattern Finder** | Find similar implementations |
+| **Librarian** | External library docs |
+| **Frontend Engineer** | UI/UX implementation |
+| **Document Writer** | Technical documentation |
+| **Translator** | Translation and i18n |
+| **Thoughts Locator** | Find research documents |
+| **Thoughts Analyzer** | Analyze research insights |
+
+### Hunter Agents (dispatched by Argus)
+
+| Agent | Role |
+|-------|------|
+| **Hunter Silent Failure** | Finds swallowed errors |
+| **Hunter Type Design** | Finds type invariant violations |
+| **Hunter Security** | Finds security vulnerabilities |
+| **Hunter Code Review** | Finds convention violations |
+| **Hunter Simplifier** | Simplifies code with proof |
+| **Hunter Comments** | Audits comment accuracy |
+| **Hunter Test Coverage** | Fills test coverage gaps |
+
+---
 
 ## Repository Structure
 
-[Describe the directory layout discovered in Step 2]
-[Use a tree diagram]
+[WRITE: Directory tree with descriptions of each directory's purpose]
 
 ## Build/Lint/Test Commands
 
-### Validation
-[The primary validation command — what agents should run before committing]
+### Validation (Run Before Committing)
+[WRITE: The primary validation command — what agents should run before committing]
 
 ### Testing
-[Test commands with examples: run all, run single file, run with filter]
+[WRITE: All test commands with examples — run all, single file, with filter, etc.]
 
 ### Linting & Formatting
-[Lint, format, type-check commands]
+[WRITE: Lint, format, type-check commands]
 
 ### Development
-[Dev server commands if applicable]
+[WRITE: Dev server commands if applicable]
 
 ## Code Style Guidelines
 
 ### Formatting
-[Discovered formatting rules — tabs vs spaces, semicolons, quotes, line width]
+[WRITE: tabs/spaces, semicolons, quotes, line width — from formatter config]
 
 ### Imports
-[Import patterns discovered from source files — with examples]
+[WRITE: Import patterns with real examples from the codebase]
 
 ### Naming Conventions
-[File naming, variable naming, type naming patterns]
+[WRITE: File naming, variable naming, type naming patterns]
 
 ### Error Handling
-[Error handling patterns observed in the codebase]
+[WRITE: Error handling patterns observed in the codebase]
 
 ## Testing
-
-[Test framework, test file naming, example test structure from real tests]
+[WRITE: Test framework, test file naming, example test from real tests in the repo]
 
 ## Git Conventions
 
 ### Branch Naming
-[Discovered from git history or CONTRIBUTING.md — or suggest a sensible default]
+[WRITE: Pattern from git history or CONTRIBUTING.md]
 
 ### Commit Messages
-[Discovered patterns — conventional commits, etc.]
+[WRITE: Convention from git history]
 
 ## Architecture Quick Reference
 
 ### Key Files
-[Important entry points and their purposes]
-
-### Package/Module Structure
-[How the codebase is organized]
+[WRITE: Important entry points and their purposes]
 
 ## Critical Rules
 
 1. Ask for clarification rather than making assumptions
 2. Make smallest reasonable changes — don't refactor unrelated code
-3. Never implement mock modes — use real data/APIs
-4. Test output must be pristine — no unexpected logs or errors
-5. All changes need tests
-[Add any project-specific rules discovered]
+3. All changes need tests
+[WRITE: Add project-specific rules discovered from the codebase]
 ```
 
-### Step 5: Verify
-- Ensure all referenced commands actually exist in package.json/deno.json/Makefile/etc.
-- Check that file paths in AGENTS.md actually exist
-- Confirm the structure description matches reality
+## Step 5: Self-Verify
 
-## Important Notes
+After writing AGENTS.md:
+1. Read it back and confirm ALL sections above are present
+2. Confirm it contains real commands (not placeholders like "TBD")
+3. Confirm file paths referenced in the document actually exist in the repo
+4. Report: "AGENTS.md written successfully with [N] sections covering [stack description]"
 
-- Be thorough — agents need actionable information, not vague descriptions
-- Include REAL command examples with actual flags and options
-- Reference REAL file paths from the repository
-- If something is unclear, note it as "TBD — verify with team"
-- The generated AGENTS.md replaces the placeholder at the workspace root
-- Do NOT modify any agent definitions in .opencode/agents/
-- Do NOT modify any files in the product repository itself
+If any section is missing, go back and add it before finishing.

@@ -40,6 +40,7 @@ make help           # Show all targets with descriptions
 
 | Target | Description |
 |--------|-------------|
+| `make adopt REPO=<url>` | One-command setup: clone repo + generate AGENTS.md |
 | `make init` | Clone your product repo into `worktrees/main/` |
 | `make setup-repo` | Generate project-specific AGENTS.md by inspecting your repo |
 | `make open` | Open OpenCode in `main/` |
@@ -111,6 +112,19 @@ Switch agents with **Tab** in OpenCode, or invoke with `@agent-name`.
 ---
 
 ## Common Workflows
+
+### "I want to set up a new workspace"
+
+```bash
+# One command — clone + generate AGENTS.md
+make adopt REPO=git@github.com:org/repo.git
+pt
+
+# Or step-by-step:
+make init REPO=git@github.com:org/repo.git
+make setup-repo
+pt
+```
 
 ### "I want to start a new feature"
 

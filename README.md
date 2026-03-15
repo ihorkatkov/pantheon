@@ -115,46 +115,43 @@ When Vulkanus thinks "tests are molds, implementation fills them," it naturally 
 opencode --version   # verify it works
 ```
 
-### Step 1: Use as GitHub Template → Clone
+### Step 1: Create Your Workspace
 
 On GitHub, click **"Use this template"** to create your own copy, then clone it:
 
 ```bash
+gh repo create my-workspace --template ihorkatkov/pantheon --private
 git clone git@github.com:your-org/your-workspace.git
 cd your-workspace
 ```
 
-### Step 2: Initialize — Clone Your Product Repo
+### Step 2: Adopt Your Product Repo
 
 ```bash
-make init
-# You will be prompted:
-# Enter your product repo URL (SSH or HTTPS):
-# → git@github.com:your-org/your-product.git
-# ✓ Cloned into worktrees/main/
+make adopt REPO=git@github.com:org/my-product.git
 ```
 
-This clones your product repository into `worktrees/main/`.
+This clones your repo into `worktrees/main/` and generates a project-specific `AGENTS.md` — the key file that teaches all 23 agents how your project works (build commands, test patterns, conventions, architecture).
 
-### Step 3: Generate Project-Specific AGENTS.md
+Or step-by-step if you prefer:
 
 ```bash
+make init REPO=git@github.com:org/my-product.git
 make setup-repo
 ```
 
-This opens OpenCode and runs `/setup-repo`, which inspects your product repo and generates a project-tailored `AGENTS.md` with build commands, test commands, code style rules, and architecture overview. The AI writes it — you review and commit it.
-
-### Step 4: Start Working
+### Step 3: Start Working
 
 ```bash
 pt              # Open OpenCode in main/ (interactive)
+pt --new my-feature   # Create a feature branch worktree
 # or
-make open       # Same thing
+make open       # Same as pt
 ```
 
 OpenCode starts with Zeus as the default agent. Press **Tab** to switch to Prometheus (planning) or Vulkanus (implementation).
 
-### Step 5: (Recommended) Add Shell Alias
+### Step 4: (Recommended) Add Shell Alias
 
 Add to `~/.zshrc` or `~/.bashrc`:
 
@@ -282,7 +279,8 @@ your-workspace/
 |-------|----------|------------------|---------|
 | **Machine** | `~/.config/opencode/opencode.json` | API keys, MCP servers, themes | No — personal only |
 | **Workspace** | `.opencode/` | Agents, commands, skills, project settings | **Yes** — tracked in git |
-| **Project** | `worktrees/main/AGENTS.md` | Build commands, conventions, architecture | Yes — in your product repo |
+| **Project** | `AGENTS.md` (workspace root) | Build commands, conventions, architecture | **Yes** — tracked in git |
+| **Product** | `worktrees/main/CLAUDE.md` (optional) | Additional product-specific notes | Yes — in your product repo |
 
 ### When You Run `pt main`
 
@@ -290,7 +288,7 @@ your-workspace/
 2. OpenCode starts in `your-workspace/worktrees/main/` directory
 3. Machine config loaded from `~/.config/opencode/`
 4. Workspace agents/commands loaded from `.opencode/`
-5. `AGENTS.md` in the worktree provides project-specific context to all agents
+5. OpenCode traverses **up** from `worktrees/main/` and finds `AGENTS.md` at the workspace root — providing project-specific context to all agents
 
 ### Machine Configuration
 
@@ -307,6 +305,29 @@ Create `~/.config/opencode/opencode.json` for your personal settings:
 ```
 
 > **Note**: This file contains secrets — never commit it.
+
+---
+
+## How AGENTS.md Works
+
+OpenCode traverses **up** from the working directory, collecting all `AGENTS.md` and `CLAUDE.md` files it finds. In a Pantheon workspace:
+
+```
+pantheon-workspace/
+├── AGENTS.md                  ← Found by traversing UP (workspace context)
+└── worktrees/
+    └── main/
+        ├── CLAUDE.md          ← Found in cwd (product context, if exists)
+        └── (your product code)
+```
+
+This means:
+
+- **Workspace `AGENTS.md`** (at root) provides agent system context and project conventions — your build commands, test patterns, code style, architecture overview
+- **Product `CLAUDE.md`** (in worktree, if your product repo has one) provides additional product-specific context
+- Both are loaded and available to all agents in the session
+
+The `make adopt` command (or `make setup-repo`) generates the workspace `AGENTS.md` by inspecting your product repo. This is the **most important step** of adoption — it teaches all 23 agents how your specific project works.
 
 ---
 
@@ -369,14 +390,46 @@ Create a directory in `.opencode/skills/`:
 └── SKILL.md
 ```
 
-### Post-Worktree-Create Hook
+### Post-Worktree Hooks
 
-`setup-worktree` runs after `pt --new` creates a worktree. Edit it to automate your setup:
+When `pt --new` creates a worktree, it runs `hooks/post-worktree-create` if it exists. Use this for project-specific setup:
 
 ```bash
-# Install dependencies, generate configs, run migrations, etc.
-$EDITOR setup-worktree
+# Copy the example hook to get started
+cp hooks/post-worktree-create.example hooks/post-worktree-create
+chmod +x hooks/post-worktree-create
 ```
+
+Example for an Elixir/Phoenix project:
+
+```bash
+#!/bin/bash
+WORKTREE_PATH="$1"
+cd "$WORKTREE_PATH"
+mix deps.get
+mix ecto.setup
+```
+
+Example for a Node.js project:
+
+```bash
+#!/bin/bash
+WORKTREE_PATH="$1"
+cd "$WORKTREE_PATH"
+npm install
+cp ../main/.env .env
+```
+
+Example to symlink `thoughts/` into the worktree (so research docs stay in the workspace, not the product repo):
+
+```bash
+#!/bin/bash
+WORKTREE_PATH="$1"
+PANTHEON_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ln -sf "$PANTHEON_ROOT/thoughts" "$WORKTREE_PATH/thoughts"
+```
+
+> **Note**: The legacy `setup-worktree` script at the repo root still works for backwards compatibility.
 
 ---
 
@@ -466,6 +519,38 @@ Skills are specialized instruction modules that agents load on demand:
 
 ---
 
+## Migrating from Existing Setup
+
+If your product repo already has `.opencode/` with customized agents:
+
+### The Pantheon Model
+
+| Layer | Where | What |
+|-------|-------|------|
+| **Agent behavior** | Workspace `.opencode/agents/` | Generic roles (TDD, research, planning) |
+| **Project context** | Workspace `AGENTS.md` | Your stack, commands, conventions |
+| **Product context** | Worktree `CLAUDE.md` (optional) | Additional product-specific notes |
+
+### Migration Steps
+
+1. **Run `make adopt REPO=...`** (or `make setup-repo`) — generates `AGENTS.md` from your product repo
+2. **Review the generated `AGENTS.md`** — add any conventions that were baked into custom agents
+3. **Remove `.opencode/` from your product repo** — the workspace provides agents for all team members
+4. **Move project-specific commands** to `AGENTS.md` sections (validation commands, test patterns, etc.)
+
+### What Goes Where
+
+| Content | Where It Belongs |
+|---------|-----------------|
+| `mix precommit`, `npm test`, `cargo build` | `AGENTS.md` → Build/Test Commands |
+| Import patterns, naming conventions | `AGENTS.md` → Code Style |
+| Test file naming, test framework patterns | `AGENTS.md` → Testing |
+| Language-specific patterns (Elixir, Rust, Python) | `AGENTS.md` → Code Style |
+| TDD workflow, delegation rules | Agent files (already generic) |
+| Research protocols, planning templates | Agent files (already generic) |
+
+---
+
 ## FAQ / Troubleshooting
 
 ### "Agents not found" / wrong agents loading
@@ -512,11 +597,33 @@ MCP servers are optional but require valid API keys and configured commands if e
 
 ### Wrong AGENTS.md loaded
 
-Ensure you opened the correct worktree. The `AGENTS.md` used is the one inside the worktree directory (e.g., `worktrees/main/AGENTS.md`), not the workspace root.
+OpenCode traverses up from the worktree directory to find `AGENTS.md`. The workspace `AGENTS.md` at the repo root is what gets loaded — not one inside the worktree itself.
+
+If agents seem unaware of your project conventions, confirm `AGENTS.md` exists at the workspace root:
 
 ```bash
-pt --list   # verify which worktree you're targeting
+ls AGENTS.md       # should exist at workspace root
+make setup-repo    # regenerate if missing or stale
 ```
+
+Verify you opened the correct worktree:
+```bash
+pt --list   # shows all available worktrees
+```
+
+### Where Do Research Docs Go?
+
+Agents create research documents in `thoughts/` relative to their working directory. Since agents run inside the worktree (`worktrees/main/`), `thoughts/` is created inside the product repo by default.
+
+To keep research docs in the workspace instead (tracked in your workspace git, not your product repo), add a symlink in your post-worktree-create hook:
+
+```bash
+# hooks/post-worktree-create
+PANTHEON_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ln -sf "$PANTHEON_ROOT/thoughts" "$1/thoughts"
+```
+
+Or simply accept that `thoughts/` lives in the product repo — most projects gitignore it by default.
 
 ### Common Issues Checklist
 
