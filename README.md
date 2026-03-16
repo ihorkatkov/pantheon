@@ -165,6 +165,388 @@ Now run `pt` from anywhere.
 
 ---
 
+## Setup Guide for AI Agents
+
+> This section is written FOR AI agents. If a user says "set up Pantheon for my project" and points you here, follow these steps end-to-end. No other context is needed.
+
+---
+
+### Key Facts (Read First)
+
+- **Pantheon is a workspace shell.** It wraps a product repo — it does NOT live inside one.
+- **Product code lives in `worktrees/main/`** — a git worktree of the user's product repo.
+- **`.opencode/`** contains all 23 agent definitions. Edit these files to customize agent behavior.
+- **`AGENTS.md` at the workspace root** is the project context file. It teaches all 23 agents your project's stack, commands, and conventions.
+- **OpenCode traverses up** from `worktrees/main/` and loads `AGENTS.md` at the workspace root automatically.
+- **`pt`** is a thin shell script that sets `OPENCODE_CONFIG_DIR` and calls `opencode`. It is the primary entrypoint.
+- All `make` targets are convenience wrappers — the scripts (`pt`, `setup-worktree`) work standalone.
+
+---
+
+### Prerequisites Check
+
+Verify each before proceeding. If a prerequisite is missing, follow the recovery note.
+
+```bash
+# 1. Git
+git --version
+# Recovery: install from https://git-scm.com/
+
+# 2. GitHub CLI (needed for Path A workspace creation)
+gh --version
+# Recovery: install from https://cli.github.com/ or use Path B below
+
+# 3. Make
+make --version
+# Recovery (macOS):  xcode-select --install
+# Recovery (Linux):  sudo apt install make  OR  sudo yum install make
+
+# 4. OpenCode
+opencode --version
+# Recovery: install from https://opencode.ai/docs/install
+
+# 5. Git authentication to GitHub
+ssh -T git@github.com
+# OR
+gh auth status
+# Recovery: gh auth login  OR  add SSH key at github.com/settings/keys
+```
+
+Determine from the user:
+- **Product repo URL** — e.g. `git@github.com:org/my-product.git`. Ask if not provided.
+- **Workspace name** — defaults to `<product-repo-name>-workspace` if not specified.
+- **Workspace location** — defaults to `~/Projects/<workspace-name>/`.
+
+---
+
+### Step 1: Create Workspace from Template
+
+Two paths. Use Path A if `gh` is available; fall back to Path B otherwise.
+
+#### Path A — GitHub Template (Preferred)
+
+```bash
+gh repo create <workspace-name> --template ihorkatkov/pantheon --private --clone
+cd <workspace-name>
+```
+
+#### Path B — Direct Clone
+
+```bash
+git clone https://github.com/ihorkatkov/pantheon.git <workspace-name>
+cd <workspace-name>
+# Re-initialize git so the workspace is its own repo (not a fork of pantheon)
+rm -rf .git
+git init
+git add -A
+git commit -m "chore: initialize workspace from pantheon template"
+# Push to a new remote if the user wants version control on the workspace:
+# gh repo create <workspace-name> --private --source=. --push
+```
+
+**Verification — workspace is valid:**
+```bash
+ls Makefile pt .opencode/
+# Must show all three. If any are missing, the clone/template failed.
+```
+
+---
+
+### Step 2: Clone Product Repo
+
+```bash
+make init REPO=<user's-product-repo-url>
+```
+
+**What this does:** Clones the product repo into `worktrees/main/`.
+
+**Verification:**
+```bash
+ls worktrees/main/.git
+# Must exist. If worktrees/main/ is empty or missing, re-run make init.
+```
+
+If `worktrees/main/` already exists (workspace was previously initialized), skip this step.
+
+---
+
+### Step 3: Generate Project-Specific AGENTS.md
+
+```bash
+make setup-repo
+```
+
+**What this does:** Launches OpenCode non-interactively, runs `/setup-repo`, which inspects the product repo and writes a comprehensive `AGENTS.md` at the workspace root.
+
+**Verification:**
+```bash
+wc -l AGENTS.md
+# Must be more than 80 lines.
+grep "This is a placeholder" AGENTS.md
+# Must return nothing. If it still contains the placeholder text, the command failed.
+```
+
+**If verification fails — you ARE the agent that should write AGENTS.md:**
+
+`make setup-repo` calls `opencode run "/setup-repo"` which opens a new AI session. If you are the agent running this setup (and cannot launch a subprocess), you must generate `AGENTS.md` yourself:
+
+1. Read the product repo's config files: `package.json`, `Cargo.toml`, `go.mod`, `mix.exs`, `pyproject.toml`, `Gemfile`, `Makefile`, `deno.json`, `.github/workflows/`
+2. Read 3–5 source files for import patterns and naming conventions
+3. Read 3–5 test files for test framework and naming patterns
+4. Run `git log --oneline -20` in `worktrees/main/` for commit message patterns
+5. Write `AGENTS.md` at the workspace root following the template in `.opencode/commands/setup-repo.md`
+
+Required sections: Agent Pantheon, Repository Structure, Build/Lint/Test Commands, Code Style Guidelines, Naming Conventions, Error Handling, Testing, Git Conventions, Architecture Quick Reference, Critical Rules.
+
+Do NOT skip any section. Do NOT leave placeholders. Confirm the file is over 80 lines after writing.
+
+---
+
+### Step 4: Configure OpenCode (Machine Config)
+
+OpenCode reads personal settings (API keys, MCP servers) from the machine config. This file is **never committed** — it is personal.
+
+Location: `~/.config/opencode/opencode.json`
+
+Check if it exists:
+```bash
+cat ~/.config/opencode/opencode.json
+```
+
+If it does not exist or has no API key, create it:
+
+```json
+{
+  "provider": {
+    "anthropic": {
+      "apiKey": "sk-ant-..."
+    }
+  }
+}
+```
+
+Supported provider keys: `anthropic`, `openai`, `google`, `groq`. At least one is required.
+
+**Optional MCP servers** (add only if the user requests them):
+```json
+{
+  "provider": {
+    "anthropic": { "apiKey": "sk-ant-..." }
+  },
+  "mcp": {
+    "linear": {
+      "type": "local",
+      "command": "npx",
+      "args": ["-y", "@linear/mcp-server"],
+      "env": { "LINEAR_API_KEY": "lin_api_..." }
+    }
+  }
+}
+```
+
+---
+
+### Step 5: (Optional) Project-Specific Customizations
+
+#### Post-Worktree Hook
+
+When `pt --new` creates a feature worktree, it automatically runs `hooks/post-worktree-create` if the file is executable. Use this to install dependencies or run setup in each new worktree.
+
+```bash
+mkdir -p hooks
+```
+
+Choose the template for the user's ecosystem:
+
+**Node.js / npm:**
+```bash
+#!/bin/bash
+WORKTREE_PATH="$1"
+cd "$WORKTREE_PATH"
+npm install
+cp ../main/.env .env 2>/dev/null || true
+```
+
+**Node.js / pnpm:**
+```bash
+#!/bin/bash
+WORKTREE_PATH="$1"
+cd "$WORKTREE_PATH"
+pnpm install
+```
+
+**Elixir / Phoenix:**
+```bash
+#!/bin/bash
+WORKTREE_PATH="$1"
+cd "$WORKTREE_PATH"
+mix deps.get
+mix ecto.setup
+```
+
+**Python:**
+```bash
+#!/bin/bash
+WORKTREE_PATH="$1"
+cd "$WORKTREE_PATH"
+pip install -e .
+```
+
+**Rust:**
+```bash
+#!/bin/bash
+WORKTREE_PATH="$1"
+cd "$WORKTREE_PATH"
+cargo build
+```
+
+**Go:**
+```bash
+#!/bin/bash
+WORKTREE_PATH="$1"
+cd "$WORKTREE_PATH"
+go mod download
+```
+
+After writing the hook, make it executable:
+```bash
+chmod +x hooks/post-worktree-create
+```
+
+#### Project-Level OpenCode Settings
+
+Add project-level MCP servers, model overrides, or keybindings to `.opencode/opencode.jsonc`. This file is tracked in git and shared with the whole team.
+
+#### Custom Agents or Commands
+
+- Add agent files to `.opencode/agents/<name>.md`
+- Add slash commands to `.opencode/commands/<name>.md`
+
+Changes take effect immediately — no restart needed.
+
+---
+
+### Step 6: Verify Everything Works
+
+```bash
+# All Make targets visible
+make help
+
+# pt CLI functional
+./pt --help
+
+# Worktrees list shows main
+./pt --list
+# Expected output: "main (main or master branch) [default]"
+
+# AGENTS.md is not a placeholder
+grep -c "" AGENTS.md
+# Must be > 80
+```
+
+If OpenCode is available interactively, open a session:
+```bash
+./pt
+# OpenCode should start in worktrees/main/
+# Zeus is the default agent. Press Tab to switch agents.
+```
+
+---
+
+### Step 7: (Optional) Create a Feature Worktree
+
+Demonstrate that feature isolation works:
+```bash
+# Create a new isolated worktree on a new branch
+./pt --new my-feature
+
+# Open it
+./pt my-feature
+
+# When done, remove it
+./pt --remove my-feature
+```
+
+Each worktree is a full checkout with isolated git state. Multiple sessions can run in parallel (one terminal per worktree).
+
+---
+
+### Complete Example
+
+Full transcript: setting up Pantheon for a hypothetical Node.js product repo called `acme/webapp`.
+
+```bash
+# 0. Prerequisites confirmed: git, gh, make, opencode all installed
+
+# 1. Create workspace from template
+gh repo create acme-workspace --template ihorkatkov/pantheon --private --clone
+cd acme-workspace
+
+# Verify
+ls Makefile pt .opencode/   # ✓
+
+# 2. Clone product repo
+make init REPO=git@github.com:acme/webapp.git
+# Output: "✓ Cloned into worktrees/main/"
+
+# Verify
+ls worktrees/main/.git   # ✓
+
+# 3. Generate AGENTS.md
+make setup-repo
+# OpenCode runs /setup-repo non-interactively
+# Output: "✓ AGENTS.md updated successfully."
+
+# Verify
+wc -l AGENTS.md      # e.g., 143
+grep "This is a placeholder" AGENTS.md   # (no output = good)
+
+# 4. Machine config (already exists from prior use — skip if already configured)
+cat ~/.config/opencode/opencode.json   # has anthropic key
+
+# 5. Add post-worktree hook for Node.js
+mkdir -p hooks
+cat > hooks/post-worktree-create << 'EOF'
+#!/bin/bash
+WORKTREE_PATH="$1"
+cd "$WORKTREE_PATH"
+npm install
+cp ../main/.env .env 2>/dev/null || true
+EOF
+chmod +x hooks/post-worktree-create
+
+# 6. Verify everything
+make help         # lists init, adopt, setup-repo, open, worktree, list, update, clean
+./pt --help       # shows full CLI usage
+./pt --list       # shows: main (main) [default]
+
+# 7. Open a session
+./pt
+# OpenCode opens in worktrees/main/ with all 23 agents available
+# Press Tab → switch to Prometheus to plan, Vulkanus to implement
+```
+
+Setup is complete.
+
+---
+
+### Troubleshooting for Agents
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `opencode: command not found` | OpenCode not installed | Direct user to https://opencode.ai/docs/install |
+| `make: command not found` | Make not on PATH | macOS: `xcode-select --install` · Linux: `sudo apt install make` |
+| `gh: command not found` | GitHub CLI not installed | Use Path B (direct clone) in Step 1 |
+| `Permission denied: ./pt` | Script not executable | `chmod +x pt setup-worktree` |
+| `worktrees/main/ already exists` | Step 2 already done | Skip Step 2 — proceed to Step 3 |
+| `AGENTS.md still contains "This is a placeholder"` | `/setup-repo` sub-process failed | Generate `AGENTS.md` manually (see Step 3 fallback) |
+| Agents unaware of project conventions | AGENTS.md is stale or placeholder | Run `make setup-repo` or generate manually |
+| `Error: Worktree 'main' not found` after Step 2 | `make init` failed silently | Re-run with explicit REPO: `make init REPO=<url>` and check for git clone errors |
+| OpenCode loads wrong agents | `OPENCODE_CONFIG_DIR` not set | Always use `./pt` — it sets the env var. If running `opencode` directly: `export OPENCODE_CONFIG_DIR="$(pwd)/.opencode"` |
+| `ssh: Could not resolve hostname github.com` | No network or SSH not configured | Run `gh auth login` or add SSH key at github.com/settings/keys |
+
+---
+
 ## Daily Use
 
 ### Start a New Feature Worktree
