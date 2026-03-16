@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <defs>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#111114" stroke-width="0.8"/>
+    </pattern>
+    <marker id="arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0.5 L0,5.5 L5,3 Z" fill="#71717a"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="640" fill="#09090b"/>
+  <rect width="1280" height="640" fill="url(#grid)" opacity="1"/>
+
+  <!-- PANTHEON title -->
+  <text x="640" y="88"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-size="62" font-weight="200"
+    letter-spacing="28"
+    fill="#f4f4f5" text-anchor="middle">PANTHEON</text>
+
+  <!-- Tagline under title -->
+  <text x="640" y="116"
+    font-family="'Courier New', 'Lucida Console', monospace"
+    font-size="11" fill="#71717a" text-anchor="middle" letter-spacing="3">
+    AI DEVELOPMENT TOOLCHAIN
+  </text>
+
+  <!-- Central command box -->
+  <rect x="440" y="148" width="400" height="80" rx="3"
+    fill="#0d0d10" stroke="#52525b" stroke-width="1"/>
+  <!-- Prompt sign -->
+  <text x="464" y="182"
+    font-family="'Courier New', monospace"
+    font-size="13" fill="#52525b">›</text>
+  <text x="480" y="182"
+    font-family="'Courier New', 'Lucida Console', monospace"
+    font-size="13" fill="#e4e4e7">pt --new feature-x</text>
+  <!-- Cursor -->
+  <rect x="690" y="170" width="8" height="14" fill="#52525b" opacity="0.8"/>
+  <!-- Output -->
+  <text x="464" y="207"
+    font-family="'Courier New', monospace"
+    font-size="11" fill="#71717a">Initializing workspace  ·  injecting agents  ·  ready</text>
+
+  <!-- Connector lines: center box to 3 children -->
+  <!-- Center vertical down -->
+  <line x1="640" y1="228" x2="640" y2="270" stroke="#52525b" stroke-width="1"/>
+  <!-- Horizontal splitter -->
+  <line x1="230" y1="270" x2="1050" y2="270" stroke="#52525b" stroke-width="1"/>
+  <!-- Left down -->
+  <line x1="230" y1="270" x2="230" y2="310" stroke="#52525b" stroke-width="1" marker-end="url(#arrow)"/>
+  <!-- Center down -->
+  <line x1="640" y1="270" x2="640" y2="310" stroke="#52525b" stroke-width="1" marker-end="url(#arrow)"/>
+  <!-- Right down -->
+  <line x1="1050" y1="270" x2="1050" y2="310" stroke="#52525b" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- Worktree box LEFT — Zeus / main -->
+  <rect x="56" y="314" width="347" height="148" rx="3"
+    fill="#0d0d10" stroke="#52525b" stroke-width="1"/>
+  <!-- Top label bar -->
+  <rect x="56" y="314" width="347" height="28" rx="3" fill="#111114"/>
+  <rect x="56" y="328" width="347" height="14" fill="#111114"/>
+  <text x="74" y="332"
+    font-family="'Courier New', monospace"
+    font-size="11" fill="#52525b">worktree: main</text>
+  <text x="374" y="332"
+    font-family="'Courier New', monospace"
+    font-size="11" fill="#52525b" text-anchor="end">branch: main</text>
+  <!-- Divider -->
+  <line x1="56" y1="342" x2="403" y2="342" stroke="#1a1a1d" stroke-width="1"/>
+  <!-- Agent name -->
+  <text x="74" y="372"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-size="18" font-weight="300" fill="#e4e4e7" letter-spacing="3">ZEUS</text>
+  <text x="74" y="394"
+    font-family="'Courier New', monospace"
+    font-size="10" fill="#71717a" letter-spacing="1">orchestrator · delegates · never implements</text>
+  <!-- Status line -->
+  <text x="74" y="432"
+    font-family="'Courier New', monospace"
+    font-size="11" fill="#52525b">agent initialized.</text>
+  <!-- Dots -->
+  <circle cx="74" cy="450" r="2.5" fill="#22c55e" opacity="0.8"/>
+  <circle cx="84" cy="450" r="2.5" fill="#52525b"/>
+  <circle cx="94" cy="450" r="2.5" fill="#52525b"/>
+
+  <!-- Worktree box CENTER — Prometheus / feat/auth -->
+  <rect x="466" y="314" width="347" height="148" rx="3"
+    fill="#0d0d10" stroke="#52525b" stroke-width="1"/>
+  <rect x="466" y="314" width="347" height="28" rx="3" fill="#111114"/>
+  <rect x="466" y="328" width="347" height="14" fill="#111114"/>
+  <text x="484" y="332"
+    font-family="'Courier New', monospace"
+    font-size="11" fill="#52525b">worktree: feat/auth</text>
+  <text x="784" y="332"
+    font-family="'Courier New', monospace"
+    font-size="11" fill="#52525b" text-anchor="end">branch: feat/auth</text>
+  <line x1="466" y1="342" x2="813" y2="342" stroke="#1a1a1d" stroke-width="1"/>
+  <text x="484" y="372"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-size="18" font-weight="300" fill="#e4e4e7" letter-spacing="3">PROMETHEUS</text>
+  <text x="484" y="394"
+    font-family="'Courier New', monospace"
+    font-size="10" fill="#71717a" letter-spacing="1">planner · forethought prevents rework</text>
+  <text x="484" y="432"
+    font-family="'Courier New', monospace"
+    font-size="11" fill="#52525b">agent initialized.</text>
+  <circle cx="484" cy="450" r="2.5" fill="#22c55e" opacity="0.8"/>
+  <circle cx="494" cy="450" r="2.5" fill="#22c55e" opacity="0.8"/>
+  <circle cx="504" cy="450" r="2.5" fill="#52525b"/>
+
+  <!-- Worktree box RIGHT — Vulkanus / feat/payments -->
+  <rect x="876" y="314" width="347" height="148" rx="3"
+    fill="#0d0d10" stroke="#52525b" stroke-width="1"/>
+  <rect x="876" y="314" width="347" height="28" rx="3" fill="#111114"/>
+  <rect x="876" y="328" width="347" height="14" fill="#111114"/>
+  <text x="894" y="332"
+    font-family="'Courier New', monospace"
+    font-size="11" fill="#52525b">worktree: feat/payments</text>
+  <text x="1194" y="332"
+    font-family="'Courier New', monospace"
+    font-size="11" fill="#52525b" text-anchor="end">branch: feat/pay</text>
+  <line x1="876" y1="342" x2="1223" y2="342" stroke="#1a1a1d" stroke-width="1"/>
+  <text x="894" y="372"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-size="18" font-weight="300" fill="#e4e4e7" letter-spacing="3">VULKANUS</text>
+  <text x="894" y="394"
+    font-family="'Courier New', monospace"
+    font-size="10" fill="#71717a" letter-spacing="1">tdd forge · tests are molds</text>
+  <text x="894" y="432"
+    font-family="'Courier New', monospace"
+    font-size="11" fill="#52525b">agent initialized.</text>
+  <circle cx="894" cy="450" r="2.5" fill="#22c55e" opacity="0.8"/>
+  <circle cx="904" cy="450" r="2.5" fill="#22c55e" opacity="0.8"/>
+  <circle cx="914" cy="450" r="2.5" fill="#22c55e" opacity="0.8"/>
+
+  <!-- Bottom tagline -->
+  <text x="640" y="538"
+    font-family="'Courier New', 'Lucida Console', monospace"
+    font-size="12" fill="#71717a" text-anchor="middle" letter-spacing="2">
+    parallel AI development  ·  automated  ·  23 agents
+  </text>
+
+  <!-- Subtle "+" more indicator -->
+  <text x="640" y="560"
+    font-family="'Courier New', monospace"
+    font-size="10" fill="#3f3f46" text-anchor="middle" letter-spacing="1">
+    + 20 more agents: Mnemosyne · Argus · Oracle · Librarian · ...
+  </text>
+</svg>
