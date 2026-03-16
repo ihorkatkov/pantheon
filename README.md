@@ -2,10 +2,9 @@
 
 ![Pantheon](assets/banner.png)
 
-23 AI agents. One workspace. Version-controlled like code.
+Most people run one agent for everything. One context window trying to be architect, TDD engineer, planner, and reviewer at once. That's a monolith.
 
-Pantheon is a development shell where AI agents are first-class citizens —
-defined in files, reviewed in PRs, improved by the team. Built on OpenCode.
+Pantheon is a scaffold of 23 specialized agents — each with one job, none sharing context. Defined in files, versioned in git, improved like code.
 
 ---
 
