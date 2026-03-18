@@ -1,26 +1,24 @@
 ---
-description: Inspect your product repository and generate a project-specific AGENTS.md
+description: Inspect your product repository and fill the Project Configuration section of AGENTS.md
 ---
 
 # /setup-repo
 
-**Your ONLY job is to WRITE the file `AGENTS.md` at the Pantheon workspace root.**
+**Your job: inspect the product repository and fill the Project Configuration section of AGENTS.md.**
 
-You must:
-1. READ the product repository in the current worktree to understand its stack
-2. WRITE one file: the AGENTS.md at the workspace root (the `PANTHEON_ROOT` environment variable points there, or navigate two directories up from the worktree: `../../AGENTS.md`)
+The AGENTS.md file already exists at the workspace root (`$PANTHEON_ROOT/AGENTS.md` or `../../AGENTS.md`). It has agent tables at the top (DO NOT TOUCH) and a Project Configuration section marked by HTML comments. You replace ONLY the content between `<!-- PROJECT_CONFIG_START -->` and `<!-- PROJECT_CONFIG_END -->`.
 
 ## Hard Rules
 
 - **Do NOT** run any install, build, or test commands (`npm install`, `mix deps.get`, `pip install`, `cargo build`, etc.)
 - **Do NOT** modify any files in the product repository
-- **Do NOT** create or modify any files other than AGENTS.md
-- **Do NOT** run the project's dev server, database migrations, or asset builds
-- You are a READER and a WRITER of one file. Nothing else.
+- **Do NOT** modify any content above `<!-- PROJECT_CONFIG_START -->`
+- **Do NOT** remove the `<!-- PROJECT_CONFIG_START -->` or `<!-- PROJECT_CONFIG_END -->` markers
+- You READ the repo, then UPDATE one section of one file. Nothing else.
 
-## Step 1: Identify the Stack
+## Step 1: Inspect the Repo
 
-Read configuration files (do NOT execute anything):
+Read configuration files to identify the stack (do NOT execute anything):
 
 - `package.json`, `deno.json`, `tsconfig.json` → Node.js / Deno / TypeScript
 - `Cargo.toml` → Rust
@@ -32,149 +30,96 @@ Read configuration files (do NOT execute anything):
 - `Makefile`, `Justfile` → Build system
 - `.github/workflows/`, `.gitlab-ci.yml`, `.circleci/` → CI/CD
 
-From these files, extract:
-- Language(s) and framework(s)
-- Test commands and test runner
-- Lint and format commands
-- Build / validation commands
-- Package manager
+Then read:
+- 3-5 source files for import/naming patterns
+- 3-5 test files for test framework and patterns
+- Formatter/linter configs
+- `git log --oneline -20` for commit conventions
 
-## Step 2: Map the Structure
+## Step 2: Write the Project Configuration
 
-Read directory listing and key files:
-- Top-level directories and their purposes
-- Entry points (main files, route files, server files)
-- Test directories and test file naming patterns
-- Configuration files
-
-## Step 3: Extract Conventions
-
-Read (not execute) a few source files:
-- 3-5 source files for import patterns, naming, structure
-- 3-5 test files for test framework usage and patterns
-- Linter/formatter configs (`.eslintrc`, `.prettierrc`, `rustfmt.toml`, `.formatter.exs`, etc.)
-- README.md, CONTRIBUTING.md for existing conventions
-- Recent git log for commit message patterns: `git log --oneline -20`
-
-## Step 4: WRITE AGENTS.md (THIS IS YOUR PRIMARY DELIVERABLE)
-
-Write the file to the workspace root. Use the `PANTHEON_ROOT` environment variable if available:
-- If `$PANTHEON_ROOT` is set: write to `$PANTHEON_ROOT/AGENTS.md`
-- Otherwise: write to `../../AGENTS.md` (relative to worktree in `worktrees/main/`)
-
-You MUST include ALL of the following sections. Do not skip any.
+Read the existing `$PANTHEON_ROOT/AGENTS.md` (or `../../AGENTS.md`). Find the `<!-- PROJECT_CONFIG_START -->` marker. Replace everything from that marker through `<!-- PROJECT_CONFIG_END -->` with:
 
 ```
-# AGENTS.md
+<!-- PROJECT_CONFIG_START -->
+## Project Configuration
 
-Instructions for AI agents working in this repository.
+### Validation
+\`\`\`bash
+[THE primary command to run before committing — e.g., mix precommit, npm run lint && npm test, cargo clippy && cargo test]
+\`\`\`
 
-## Agent Pantheon
-
-This workspace uses a multi-agent system coordinated by **Zeus** (the master orchestrator):
-
-### Primary Agents
-
-| Agent | Role | When Used |
-|-------|------|-----------|
-| **Zeus** | Master Orchestrator | Default agent. Routes work to specialists |
-| **Prometheus** | Strategic Planner | Complex planning, requirements gathering |
-| **Vulkanus** | TDD Implementer | Code changes, bug fixes, validation |
-| **Mnemosyne** | System Cartographer | Research, documentation |
-| **Oracle** | Architecture Advisor | Hard debugging, design decisions |
-| **Argus** | Adversarial Reviewer | Pre-landing quality gate |
-
-### Utility Agents
-
-| Agent | Role |
-|-------|------|
-| **Explore** | Contextual grep — "Where is X?" |
-| **Codebase Locator** | Find files and directories |
-| **Codebase Analyzer** | Understand how code works |
-| **Codebase Pattern Finder** | Find similar implementations |
-| **Librarian** | External library docs |
-| **Frontend Engineer** | UI/UX implementation |
-| **Document Writer** | Technical documentation |
-| **Translator** | Translation and i18n |
-| **Thoughts Locator** | Find research documents |
-| **Thoughts Analyzer** | Analyze research insights |
-
-### Hunter Agents (dispatched by Argus)
-
-| Agent | Role |
-|-------|------|
-| **Hunter Silent Failure** | Finds swallowed errors |
-| **Hunter Type Design** | Finds type invariant violations |
-| **Hunter Security** | Finds security vulnerabilities |
-| **Hunter Code Review** | Finds convention violations |
-| **Hunter Simplifier** | Simplifies code with proof |
-| **Hunter Comments** | Audits comment accuracy |
-| **Hunter Test Coverage** | Fills test coverage gaps |
-
----
-
-## Repository Structure
-
-[WRITE: Directory tree with descriptions of each directory's purpose]
-
-## Build/Lint/Test Commands
-
-### Validation (Run Before Committing)
-[WRITE: The primary validation command — what agents should run before committing]
+Agents MUST run this before committing any changes.
 
 ### Testing
-[WRITE: All test commands with examples — run all, single file, with filter, etc.]
+\`\`\`bash
+# Run all tests
+[command]
+
+# Run a single test file
+[command path/to/test]
+
+# Run a specific test
+[command with filter/line number]
+\`\`\`
+
+- **Framework**: [name]
+- **Test file naming**: [pattern]
+- **Test helpers/setup**: [what's available]
 
 ### Linting & Formatting
-[WRITE: Lint, format, type-check commands]
+\`\`\`bash
+# Format code
+[command]
+
+# Check formatting
+[command]
+
+# Lint / compile check
+[command]
+\`\`\`
 
 ### Development
-[WRITE: Dev server commands if applicable]
+\`\`\`bash
+# Start dev server
+[command]
 
-## Code Style Guidelines
+# Database setup/migration
+[command]
 
-### Formatting
-[WRITE: tabs/spaces, semicolons, quotes, line width — from formatter config]
+# Install dependencies
+[command]
+\`\`\`
 
-### Imports
-[WRITE: Import patterns with real examples from the codebase]
+### Repository Structure
+\`\`\`
+[directory tree with one-line descriptions]
+\`\`\`
 
-### Naming Conventions
-[WRITE: File naming, variable naming, type naming patterns]
+### Code Style
+- **Formatting**: [tabs/spaces, width, key rules]
+- **Imports**: [patterns with examples from the repo]
+- **Naming**: [files, modules, functions, variables]
+- **Error handling**: [patterns observed]
 
-### Error Handling
-[WRITE: Error handling patterns observed in the codebase]
+### Git Conventions
+- **Branches**: [pattern]
+- **Commits**: [pattern from git log]
 
-## Testing
-[WRITE: Test framework, test file naming, example test from real tests in the repo]
-
-## Git Conventions
-
-### Branch Naming
-[WRITE: Pattern from git history or CONTRIBUTING.md]
-
-### Commit Messages
-[WRITE: Convention from git history]
-
-## Architecture Quick Reference
-
-### Key Files
-[WRITE: Important entry points and their purposes]
-
-## Critical Rules
-
+### Critical Rules
 1. Ask for clarification rather than making assumptions
 2. Make smallest reasonable changes — don't refactor unrelated code
 3. All changes need tests
-[WRITE: Add project-specific rules discovered from the codebase]
+[ADD: 3-10 project-specific rules discovered from the codebase]
+<!-- PROJECT_CONFIG_END -->
 ```
 
-## Step 5: Self-Verify
+**IMPORTANT**: Fill every section with REAL commands and patterns from the repo. No placeholders, no "TBD", no "[fill this]".
 
-After writing AGENTS.md:
-1. Read it back and confirm ALL sections above are present
-2. Confirm it contains real commands (not placeholders like "TBD")
-3. Confirm file paths referenced in the document actually exist in the repo
-4. Report: "AGENTS.md written successfully with [N] sections covering [stack description]"
+## Step 3: Verify
 
-If any section is missing, go back and add it before finishing.
+After writing:
+1. Read back AGENTS.md and confirm the agent tables above the marker are unchanged
+2. Confirm the Project Configuration section has all subsections filled
+3. Confirm the markers `<!-- PROJECT_CONFIG_START -->` and `<!-- PROJECT_CONFIG_END -->` are present
+4. Report: "AGENTS.md updated with [stack] configuration"

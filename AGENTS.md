@@ -1,7 +1,5 @@
 # AGENTS.md
 
-> **This is a placeholder.** Run `/setup-repo` (or `make setup-repo`) to generate a project-specific version.
-
 Instructions for AI agents working in this repository.
 
 ## Agent Pantheon
@@ -48,30 +46,34 @@ This workspace uses a multi-agent system coordinated by **Zeus** (the master orc
 
 ---
 
-## Project Setup
+<!-- PROJECT_CONFIG_START -->
+## Project Configuration
 
-> **⚠️ Replace this section** by running `/setup-repo` or `make setup-repo`.
-> The command will inspect your repository and generate project-specific content below.
+> ⚠️ **Not configured yet.** Run `make setup-repo` to detect your project's stack and fill this section.
 
-### Repository Structure
-<!-- /setup-repo will fill this -->
-
-### Build/Lint/Test Commands
-<!-- /setup-repo will fill this -->
-
-### Code Style Guidelines
-<!-- /setup-repo will fill this -->
+### Validation
+<!-- The primary command agents must run before committing -->
 
 ### Testing
-<!-- /setup-repo will fill this -->
+<!-- How to run tests: all, single file, filtered -->
+
+### Linting & Formatting
+<!-- Lint, format, type-check commands -->
+
+### Development
+<!-- Dev server, database, asset commands -->
+
+### Repository Structure
+<!-- Directory layout with descriptions -->
+
+### Code Style
+<!-- Import patterns, naming, error handling conventions -->
 
 ### Git Conventions
-<!-- /setup-repo will fill this -->
-
-### Architecture Quick Reference
-<!-- /setup-repo will fill this -->
+<!-- Branch naming, commit message patterns -->
 
 ### Critical Rules
 1. Ask for clarification rather than making assumptions
-2. Make smallest reasonable changes
+2. Make smallest reasonable changes — don't refactor unrelated code
 3. All changes need tests
+<!-- PROJECT_CONFIG_END -->
