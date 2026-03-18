@@ -28,7 +28,7 @@ setup-repo: ## Generate project-specific AGENTS.md by inspecting your repo
 	cd "$(WORKTREES_DIR)/main" && \
 		OPENCODE_CONFIG_DIR="$(PANTHEON_ROOT)/.opencode" \
 		PANTHEON_ROOT="$(PANTHEON_ROOT)" \
-		opencode run "/setup-repo"; \
+		opencode run --command setup-repo --agent document-writer; \
 	AFTER=$$(md5 -q "$(PANTHEON_ROOT)/AGENTS.md" 2>/dev/null || md5sum "$(PANTHEON_ROOT)/AGENTS.md" 2>/dev/null | cut -d' ' -f1 || echo "none"); \
 	if [ "$$BEFORE" = "$$AFTER" ]; then \
 		echo ""; \
@@ -77,7 +77,7 @@ update: ## Check for Pantheon updates and merge intelligently
 		cd "$(WORKTREES_DIR)/main" && \
 			OPENCODE_CONFIG_DIR="$(PANTHEON_ROOT)/.opencode" \
 			PANTHEON_ROOT="$(PANTHEON_ROOT)" \
-			opencode run "/update"; \
+			opencode run --command update --agent document-writer; \
 	fi
 
 clean: ## Remove a worktree (usage: make clean name=<name>)
